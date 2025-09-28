@@ -3,29 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WiFi Connect - Weiterleitung</title>
-    <meta http-equiv="refresh" content="0; url=wifi.php">
+    <title>Auto WiFi Connect</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            max-width: 500px; 
+            margin: 0 auto; 
+            padding: 20px; 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        .status {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+        .network-card {
+            margin: 12px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .password {
+            font-family: monospace;
+            font-size: 18px;
+            background: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .os-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #667eea;
             color: white;
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 15px;
         }
         .loader {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255,255,255,0.3);
-            border-top: 5px solid white;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-top: 3px solid #667eea;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            display: inline-block;
+            margin-right: 10px;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -34,32 +63,145 @@
     </style>
 </head>
 <body>
-    <div>
-        <div class="loader"></div>
-        <h1>WiFi Auto-Connect</h1>
-        <p>Weiterleitung zur WiFi-Konfiguration...</p>
-        <p><small>Falls keine Weiterleitung erfolgt, <a href="wifi.php" style="color: #fff; text-decoration: underline;">klicke hier</a>.</small></p>
+    <h1 style="color: white; text-align: center; margin-bottom: 10px;">🤖 Auto WiFi Connect</h1>
+    <p style="color: white; text-align: center; opacity: 0.9;">Automatische Verbindung für dein Gerät</p>
+    
+    <div class="status">
+        <div id="os-badge" class="os-badge">
+            <div class="loader"></div>Erkennung läuft...
+        </div>
+        <div id="content"></div>
     </div>
 
     <script>
-        // Sofortige Weiterleitung per JavaScript
-        window.location.href = 'wifi.php';
-        
-        // Fallback: Zeige Countdown
-        let seconds = 3;
-        const countdownElement = document.createElement('p');
-        countdownElement.innerHTML = `Weiterleitung in <strong>${seconds}</strong> Sekunden...`;
-        document.querySelector('div').appendChild(countdownElement);
-        
-        const countdownInterval = setInterval(() => {
-            seconds--;
-            if (seconds <= 0) {
-                clearInterval(countdownInterval);
-                countdownElement.innerHTML = 'Weiterleitung jetzt...';
+        // WiFi Konfiguration
+        const wifiNetworks = [
+            { ssid: 'KiJu', password: '206ogoOvdw14uNxXE9wJ' },
+            { ssid: 'MA-PRV', password: 'D1MKiMaPvR23!' }
+        ];
+
+        // Betriebssystem Erkennung
+        function detectOS() {
+            const userAgent = navigator.userAgent;
+            
+            if (/android/i.test(userAgent)) return 'android';
+            if (/iphone|ipad|ipod/i.test(userAgent)) return 'ios';
+            if (/windows/i.test(userAgent)) return 'windows';
+            if (/mac/i.test(userAgent)) return 'mac';
+            if (/linux/i.test(userAgent)) return 'linux';
+            
+            return 'unknown';
+        }
+
+        function init() {
+            const os = detectOS();
+            const osBadge = document.getElementById('os-badge');
+            const content = document.getElementById('content');
+            
+            // OS anzeigen
+            osBadge.innerHTML = `Erkannt: ${os.toUpperCase()}`;
+            
+            let html = '';
+            
+            if (os === 'android') {
+                // Android Auto-Redirect
+                html = `
+                    <h3>📱 Android Verbindung</h3>
+                    <p id="countdown">Weiterleitung in <strong>3</strong> Sekunden...</p>
+                    <p>Du wirst automatisch mit dem WLAN verbunden...</p>
+                `;
+                
+                let countdown = 3;
+                const countdownElement = document.getElementById('countdown');
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        window.location.href = `intent://wifi/${wifiNetworks[0].ssid}#Intent;scheme=android;end;`;
+                    } else {
+                        countdownElement.innerHTML = `Weiterleitung in <strong>${countdown}</strong> Sekunden...`;
+                    }
+                }, 1000);
+                
+            } else if (os === 'ios') {
+                // iOS Redirect
+                html = `
+                    <h3>🍎 iOS Verbindung</h3>
+                    <p id="countdown">Weiterleitung zu WiFi-Einstellungen in <strong>3</strong> Sekunden...</p>
+                    <p>Öffne die WiFi-Einstellungen und verbinde manuell:</p>
+                `;
+                
+                let countdown = 3;
+                const countdownElement = document.getElementById('countdown');
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        // Versuche verschiedene iOS Schemes
+                        const schemes = [
+                            'App-Prefs:root=WIFI',
+                            'prefs:root=WIFI', 
+                            'App-Prefs:WiFi'
+                        ];
+                        
+                        let success = false;
+                        schemes.forEach(scheme => {
+                            if (!success) {
+                                try {
+                                    window.location.href = scheme;
+                                    success = true;
+                                } catch(e) {
+                                    console.log('Scheme failed:', scheme);
+                                }
+                            }
+                        });
+                    } else {
+                        countdownElement.innerHTML = `Weiterleitung zu WiFi-Einstellungen in <strong>${countdown}</strong> Sekunden...`;
+                    }
+                }, 1000);
+                
             } else {
-                countdownElement.innerHTML = `Weiterleitung in <strong>${seconds}</strong> Sekunden...`;
+                // Andere Betriebssysteme
+                html = `
+                    <h3>🌐 WiFi Verbindung</h3>
+                    <p>Verwende diese Daten für die manuelle Verbindung:</p>
+                `;
             }
-        }, 1000);
+
+            // Aktuelles Netzwerk anzeigen
+            html += `
+                <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin: 15px 0;">
+                    <h4 style="margin-top: 0;">🎯 Empfohlenes Netzwerk</h4>
+                    <strong>SSID:</strong> ${wifiNetworks[0].ssid}<br>
+                    <strong>Passwort:</strong> <span class="password">${wifiNetworks[0].password}</span>
+                </div>
+            `;
+
+            // Alle verfügbaren Netzwerke
+            html += '<h4>📶 Alle verfügbaren Netzwerke</h4>';
+            wifiNetworks.forEach(network => {
+                html += `
+                    <div class="network-card">
+                        <strong>${network.ssid}</strong><br>
+                        <span class="password">${network.password}</span>
+                    </div>
+                `;
+            });
+
+            // Fallback Hinweis
+            html += `
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                    <small style="color: #6c757d;">
+                        💡 <strong>Tipp:</strong> Falls keine automatische Verbindung erfolgt, verwende die oben angezeigten Daten für die manuelle Verbindung.
+                    </small>
+                </div>
+            `;
+
+            content.innerHTML = html;
+        }
+
+        // Automatisch starten
+        window.onload = init;
     </script>
 </body>
 </html>
