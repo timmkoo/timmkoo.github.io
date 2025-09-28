@@ -56,6 +56,20 @@
             display: inline-block;
             margin-right: 10px;
         }
+        .manual-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+            display: inline-block;
+        }
+        .manual-button:hover {
+            background: #218838;
+        }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -93,6 +107,74 @@
             return 'unknown';
         }
 
+        // Verbesserte WiFi Connection Functions
+        function connectToWifi(ssid, password) {
+            const os = detectOS();
+            
+            if (os === 'android') {
+                // Verbesserter Android Intent
+                const intentUrl = `intent://wifi/configure?ssid=${encodeURIComponent(ssid)}&password=${encodeURIComponent(password)}#Intent;scheme=android;package=com.android.settings;end;`;
+                window.location.href = intentUrl;
+                
+                // Fallback für ältere Android Versionen
+                setTimeout(() => {
+                    window.location.href = 'intent://settings/wifi#Intent;scheme=android;end;';
+                }, 1000);
+                
+            } else if (os === 'ios') {
+                // iOS - Versuche verschiedene URL Schemes
+                const schemes = [
+                    'App-Prefs:root=WIFI',
+                    'prefs:root=WIFI',
+                    'App-Prefs:WIFI',
+                    'prefs:WIFI'
+                ];
+                
+                let opened = false;
+                schemes.forEach(scheme => {
+                    if (!opened) {
+                        try {
+                            window.location.href = scheme;
+                            opened = true;
+                        } catch(e) {
+                            console.log('Scheme failed:', scheme);
+                        }
+                    }
+                });
+                
+            } else if (os === 'linux') {
+                // Linux - Erweiterte Unterstützung
+                if (navigator.userAgent.includes('Ubuntu') || navigator.userAgent.includes('Debian')) {
+                    // Für GNOME-basierte Systeme
+                    try {
+                        window.location.href = 'gnome-control-center://wifi';
+                    } catch(e) {
+                        // Fallback zu nm-connection-editor
+                        console.log('GNOME control center not available');
+                    }
+                }
+                // Weitere Linux-Distributionen können hier hinzugefügt werden
+            }
+        }
+
+        // Manuelle Verbindungsfunktionen
+        function manualConnect(ssid, password) {
+            const os = detectOS();
+            let message = '';
+            
+            if (os === 'android') {
+                message = `Gehe zu Einstellungen → WLAN\nSuche nach: ${ssid}\nPasswort: ${password}`;
+            } else if (os === 'ios') {
+                message = `Gehe zu Einstellungen → WLAN\nSuche nach: ${ssid}\nPasswort: ${password}`;
+            } else if (os === 'linux') {
+                message = `Netzwerk: ${ssid}\nPasswort: ${password}\n\nKlicke auf das Netzwerk-Symbol und wähle "${ssid}"`;
+            } else {
+                message = `WLAN Name: ${ssid}\nPasswort: ${password}`;
+            }
+            
+            alert(message);
+        }
+
         function init() {
             const os = detectOS();
             const osBadge = document.getElementById('os-badge');
@@ -102,69 +184,91 @@
             osBadge.innerHTML = `Erkannt: ${os.toUpperCase()}`;
             
             let html = '';
+            const primaryNetwork = wifiNetworks[0];
             
             if (os === 'android') {
-                // Android Auto-Redirect
+                // Verbesserte Android Logik
                 html = `
                     <h3>📱 Android Verbindung</h3>
-                    <p id="countdown">Weiterleitung in <strong>3</strong> Sekunden...</p>
-                    <p>Du wirst automatisch mit dem WLAN verbunden...</p>
+                    <p id="countdown">Automatische Verbindung wird versucht... <span id="timer">3</span>s</p>
+                    <p>Falls nicht automatisch verbunden wird:</p>
+                    <button class="manual-button" onclick="manualConnect('${primaryNetwork.ssid}', '${primaryNetwork.password}')">
+                        📋 Anleitung anzeigen
+                    </button>
+                    <button class="manual-button" onclick="connectToWifi('${primaryNetwork.ssid}', '${primaryNetwork.password}')">
+                        🔄 Erneut versuchen
+                    </button>
                 `;
                 
+                // Sofortige Verbindung + Countdown
+                connectToWifi(primaryNetwork.ssid, primaryNetwork.password);
+                
                 let countdown = 3;
-                const countdownElement = document.getElementById('countdown');
+                const timerElement = document.getElementById('timer');
                 const countdownInterval = setInterval(() => {
                     countdown--;
                     if (countdown <= 0) {
                         clearInterval(countdownInterval);
-                        window.location.href = `intent://wifi/${wifiNetworks[0].ssid}#Intent;scheme=android;end;`;
+                        timerElement.textContent = '0';
                     } else {
-                        countdownElement.innerHTML = `Weiterleitung in <strong>${countdown}</strong> Sekunden...`;
+                        timerElement.textContent = countdown;
                     }
                 }, 1000);
                 
             } else if (os === 'ios') {
-                // iOS Redirect
+                // Verbesserte iOS Logik
                 html = `
                     <h3>🍎 iOS Verbindung</h3>
-                    <p id="countdown">Weiterleitung zu WiFi-Einstellungen in <strong>3</strong> Sekunden...</p>
-                    <p>Öffne die WiFi-Einstellungen und verbinde manuell:</p>
+                    <p id="countdown">Öffne WiFi-Einstellungen... <span id="timer">3</span>s</p>
+                    <p>Verbinde dich dann manuell mit dem Netzwerk:</p>
+                    <button class="manual-button" onclick="manualConnect('${primaryNetwork.ssid}', '${primaryNetwork.password}')">
+                        📋 Anleitung anzeigen
+                    </button>
+                    <button class="manual-button" onclick="connectToWifi('${primaryNetwork.ssid}', '${primaryNetwork.password}')">
+                        🔄 Einstellungen öffnen
+                    </button>
                 `;
                 
+                // Sofort zu WiFi Einstellungen
+                connectToWifi(primaryNetwork.ssid, primaryNetwork.password);
+                
                 let countdown = 3;
-                const countdownElement = document.getElementById('countdown');
+                const timerElement = document.getElementById('timer');
                 const countdownInterval = setInterval(() => {
                     countdown--;
                     if (countdown <= 0) {
                         clearInterval(countdownInterval);
-                        // Versuche verschiedene iOS Schemes
-                        const schemes = [
-                            'App-Prefs:root=WIFI',
-                            'prefs:root=WIFI', 
-                            'App-Prefs:WiFi'
-                        ];
-                        
-                        let success = false;
-                        schemes.forEach(scheme => {
-                            if (!success) {
-                                try {
-                                    window.location.href = scheme;
-                                    success = true;
-                                } catch(e) {
-                                    console.log('Scheme failed:', scheme);
-                                }
-                            }
-                        });
+                        timerElement.textContent = '0';
                     } else {
-                        countdownElement.innerHTML = `Weiterleitung zu WiFi-Einstellungen in <strong>${countdown}</strong> Sekunden...`;
+                        timerElement.textContent = countdown;
                     }
                 }, 1000);
+                
+            } else if (os === 'linux') {
+                // Linux Support
+                html = `
+                    <h3>🐧 Linux Verbindung</h3>
+                    <p>Automatische Verbindung wird versucht...</p>
+                    <p>Falls nicht funktioniert:</p>
+                    <button class="manual-button" onclick="manualConnect('${primaryNetwork.ssid}', '${primaryNetwork.password}')">
+                        📋 Detaillierte Anleitung
+                    </button>
+                    <button class="manual-button" onclick="connectToWifi('${primaryNetwork.ssid}', '${primaryNetwork.password}')">
+                        🔄 Netzwerk-Manager öffnen
+                    </button>
+                `;
+                
+                // Versuche Linux Verbindung
+                connectToWifi(primaryNetwork.ssid, primaryNetwork.password);
                 
             } else {
                 // Andere Betriebssysteme
                 html = `
                     <h3>🌐 WiFi Verbindung</h3>
                     <p>Verwende diese Daten für die manuelle Verbindung:</p>
+                    <button class="manual-button" onclick="manualConnect('${primaryNetwork.ssid}', '${primaryNetwork.password}')">
+                        📋 Verbindungsdaten anzeigen
+                    </button>
                 `;
             }
 
@@ -172,8 +276,8 @@
             html += `
                 <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin: 15px 0;">
                     <h4 style="margin-top: 0;">🎯 Empfohlenes Netzwerk</h4>
-                    <strong>SSID:</strong> ${wifiNetworks[0].ssid}<br>
-                    <strong>Passwort:</strong> <span class="password">${wifiNetworks[0].password}</span>
+                    <strong>SSID:</strong> ${primaryNetwork.ssid}<br>
+                    <strong>Passwort:</strong> <span class="password">${primaryNetwork.password}</span>
                 </div>
             `;
 
@@ -184,15 +288,24 @@
                     <div class="network-card">
                         <strong>${network.ssid}</strong><br>
                         <span class="password">${network.password}</span>
+                        <div style="margin-top: 8px;">
+                            <button class="manual-button" style="background: #6c757d; padding: 8px 12px; font-size: 14px;" 
+                                    onclick="manualConnect('${network.ssid}', '${network.password}')">
+                                Zu diesem Netzwerk verbinden
+                            </button>
+                        </div>
                     </div>
                 `;
             });
 
-            // Fallback Hinweis
+            // Erweiterte Fehlerbehebung
             html += `
                 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                    <h4>🔧 Problembehandlung</h4>
                     <small style="color: #6c757d;">
-                        💡 <strong>Tipp:</strong> Falls keine automatische Verbindung erfolgt, verwende die oben angezeigten Daten für die manuelle Verbindung.
+                        <strong>Android:</strong> Stelle sicher, dass "Links in Apps öffnen" aktiviert ist<br>
+                        <strong>iOS:</strong> Tippe auf "Zu Einstellungen" und dann "Zurück zur App"<br>
+                        <strong>Linux:</strong> NetworkManager muss installiert sein für automatische Verbindung
                     </small>
                 </div>
             `;
@@ -202,6 +315,10 @@
 
         // Automatisch starten
         window.onload = init;
+
+        // Globale Funktionen für Buttons
+        window.connectToWifi = connectToWifi;
+        window.manualConnect = manualConnect;
     </script>
 </body>
 </html>
