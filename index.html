@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Connect - Weiterleitung</title>
+    <meta http-equiv="refresh" content="0; url=wifi.php">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="loader"></div>
+        <h1>WiFi Auto-Connect</h1>
+        <p>Weiterleitung zur WiFi-Konfiguration...</p>
+        <p><small>Falls keine Weiterleitung erfolgt, <a href="wifi.php" style="color: #fff; text-decoration: underline;">klicke hier</a>.</small></p>
+    </div>
+
+    <script>
+        // Sofortige Weiterleitung per JavaScript
+        window.location.href = 'wifi.php';
+        
+        // Fallback: Zeige Countdown
+        let seconds = 3;
+        const countdownElement = document.createElement('p');
+        countdownElement.innerHTML = `Weiterleitung in <strong>${seconds}</strong> Sekunden...`;
+        document.querySelector('div').appendChild(countdownElement);
+        
+        const countdownInterval = setInterval(() => {
+            seconds--;
+            if (seconds <= 0) {
+                clearInterval(countdownInterval);
+                countdownElement.innerHTML = 'Weiterleitung jetzt...';
+            } else {
+                countdownElement.innerHTML = `Weiterleitung in <strong>${seconds}</strong> Sekunden...`;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
